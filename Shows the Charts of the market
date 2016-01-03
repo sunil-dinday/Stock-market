@@ -1,0 +1,657 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using System.Threading;
+using System.Net.Sockets;
+using System.Diagnostics;
+namespace Stock_client
+{
+    delegate void Setchart(string []txt);
+    public partial class Market : Form
+    {
+        Process[] kill;
+       
+        private byte[] buffer;
+        private byte[] rec_buffer;
+        static int count1,flag;
+
+        int count;//number of share you buy for particular company
+        public Market()
+        {
+            flag = 1;
+            count1 = 0;
+            InitializeComponent();
+        }
+
+        private void label2_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void Market_Load(object sender, EventArgs e)
+        {
+            //chart1.ChartAreas[0].AxisY.Maximum = 300;
+            chart1.Series["FACEBOOK"].Points.AddXY(count1, Principle.PF);
+            chart2.Series["GOOGLE"].Points.AddXY(count1, Principle.PG);
+            chart3.Series["WEPRO"].Points.AddXY(count1, Principle.PW);
+            chart4.Series["TWITTER"].Points.AddXY(count1, Principle.PT);
+            chart5.Series["MICROSOFT"].Points.AddXY(count1, Principle.PM);
+        
+            /*  chart1.Series["Series1"].Points.ElementAt(0).SetValueY(Principle.PF);
+            chart1.Series["Series1"].Points.ElementAt(1).SetValueY(Principle.PG);
+            chart1.Series["Series1"].Points.ElementAt(2).SetValueY(Principle.PW);
+            chart1.Series["Series1"].Points.ElementAt(3).SetValueY(Principle.PT);
+            chart1.Series["Series1"].Points.ElementAt(4).SetValueY(Principle.PM);*/
+            /*chart1.Series["FACEBOOK"].Points.AddXY(count1, Principle.PF);
+            chart1.Series["GOOGLE"].Points.AddXY(count1, Principle.PG);
+            chart1.Series["WIPRO"].Points.AddXY(count1, Principle.PW);
+            chart1.Series["TWITTER"].Points.AddXY(count1, Principle.PT);
+            chart1.Series["MICROSOFT"].Points.AddXY(count1, Principle.PM);
+            */
+            name.Text = Principle.name;
+            Money.Text = Principle.total_money.ToString();
+            F.Text = Principle.F_share.ToString();
+            G.Text = Principle.G_share.ToString();
+            W.Text = Principle.W_share.ToString();
+            T.Text = Principle.T_share.ToString();
+            M.Text = Principle.M_share.ToString();
+            Thread recv = new Thread(new ThreadStart(Recieve));//new thread to recieve data from server
+            recv.Start();
+        }
+       private void set_chart(string []txt)
+        {
+           try
+           {
+               count1+=5;
+               Principle.PF = int.Parse(txt[0]);
+                            Principle.PG = int.Parse(txt[1]);
+                            Principle.PW = int.Parse(txt[2]);
+                            Principle.PT = int.Parse(txt[3]);
+                            Principle.PM = int.Parse(txt[4]);
+                    
+               chart1.Series["FACEBOOK"].Points.AddXY(count1,Principle.PF);
+               chart2.Series["GOOGLE"].Points.AddXY(count1, Principle.PG);
+               chart3.Series["WEPRO"].Points.AddXY(count1, Principle.PW);
+               chart4.Series["TWITTER"].Points.AddXY(count1, Principle.PT);
+               chart5.Series["MICROSOFT"].Points.AddXY(count1, Principle.PM);
+               chart1.Refresh();
+               chart2.Refresh();
+               chart3.Refresh();
+               chart4.Refresh();
+               chart5.Refresh();
+               /*       chart1.Series["FACEBOOK"].Points.AddXY(count1,Principle.PF);
+                            chart1.Series["GOOGLE"].Points.AddXY(count1, Principle.PG);
+                            chart1.Series["WIPRO"].Points.AddXY(count1, Principle.PW);
+                            chart1.Series["TWITTER"].Points.AddXY(count1, Principle.PT);
+                            chart1.Series["MICROSOFT"].Points.AddXY(count1, Principle.PM);
+
+
+                         /*   chart1.Series["FACEBOOK"].Points.ElementAt(0).SetValueY(Principle.PF);
+                            chart1.Series["Series1"].Points.ElementAt(1).SetValueY(Principle.PG);
+                            chart1.Series["Series1"].Points.ElementAt(2).SetValueY(Principle.PW);
+                            chart1.Series["Series1"].Points.ElementAt(3).SetValueY(Principle.PT);
+                            chart1.Series["Series1"].Points.ElementAt(4).SetValueY(Principle.PM);
+                          * */
+                           
+           }
+           catch(Exception fg)
+           {
+           }
+        }
+
+        private void Recieve()
+        {
+            int d;
+            string prices;
+            string[] data;
+            while (true)
+            {
+                try
+                {
+                    data = new string[8];
+                    rec_buffer = new byte[100];
+                    d = Principle.client.Receive(rec_buffer);
+                //    MessageBox.Show("recived......" + Encoding.ASCII.GetString(rec_buffer, 0, d));
+                    data = Encoding.ASCII.GetString(rec_buffer,0,d).Split('#');
+                    //updating chart with new prices
+
+                    try
+                    {
+                        if (this.chart1.InvokeRequired)
+                        {
+                            Setchart s=new Setchart(set_chart);
+                                  this.Invoke(s, new object[] { data });
+
+                  
+                           
+                        }
+                        else
+                        {
+                            Principle.PF = int.Parse(data[0]);
+                            Principle.PG = int.Parse(data[1]);
+                            Principle.PW = int.Parse(data[2]);
+                            Principle.PT = int.Parse(data[3]);
+                            Principle.PM = int.Parse(data[4]);
+                            chart1.Series["FACEBOOK"].Points.AddXY(count1, Principle.PF);
+                       /*     chart1.Series["FACEBOOK"].Points.AddXY(count1, Principle.PF);
+                            chart1.Series["GOOGLE"].Points.AddXY(count1, Principle.PG);
+                            chart1.Series["WIPRO"].Points.AddXY(count1, Principle.PW);
+                            chart1.Series["TWITTER"].Points.AddXY(count1, Principle.PT);
+                            chart1.Series["MICROSOFT"].Points.AddXY(count1, Principle.PM);
+
+                          /*  chart1.Series["Series1"].Points.ElementAt(0).SetValueY(Principle.PF);
+                            chart1.Series["Series1"].Points.ElementAt(1).SetValueY(Principle.PG);
+                            chart1.Series["Series1"].Points.ElementAt(2).SetValueY(Principle.PW);
+                            chart1.Series["Series1"].Points.ElementAt(3).SetValueY(Principle.PT);
+                            chart1.Series["Series1"].Points.ElementAt(4).SetValueY(Principle.PM);
+                           * */
+                            chart1.Refresh();
+                        }
+                    }
+                    catch (Exception r)
+                    {
+                    }
+                    
+                }
+                catch (Exception f)
+                {
+                    
+
+
+                }
+
+
+            }
+        }
+
+        private void label3_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void FB_Click(object sender, EventArgs e)
+        {
+            if (textBox1.Text != "")
+            {
+                try
+                {
+                    count = int.Parse(textBox1.Text);
+                    if (count * Principle.PF > Principle.total_money)
+                    {
+                        MessageBox.Show("Insufficient Balance.........");
+                    }
+                    else
+                    {
+                        buffer = new byte[100];
+                        Principle.total_money -= count * Principle.PF;
+                        Money.Text = Principle.total_money.ToString();
+                        Principle.F_share += count;
+                        F.Text = Principle.F_share.ToString();
+
+                        textBox1.Text = "";
+                        //buffer = new byte[100];
+                        
+                        //buffer = Encoding.ASCII.GetBytes( "FB"+count.ToString());
+                       // Principle.client.Send(buffer);
+                    }
+                }
+                catch (FormatException f)
+                {
+                    textBox1.Text = "";
+                    MessageBox.Show("Don't u know u can only buy shares in numbers");
+                }
+            }
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            if (textBox2.Text != "")
+            {
+                try
+                {
+                    count = int.Parse(textBox2.Text);
+                    if (count * Principle.PG > Principle.total_money)
+                    {
+                        MessageBox.Show("Insufficient Balance.........");
+                    }
+                    else
+                    {
+                        Principle.total_money -= count * Principle.PG;
+                        Money.Text = Principle.total_money.ToString();
+                        Principle.G_share += count;
+                        G.Text = Principle.G_share.ToString();
+                        textBox2.Text = "";
+                      //  buffer = new byte[100];
+                        //buffer = Encoding.ASCII.GetBytes("GB" + count.ToString());
+                        //Principle.client.Send(buffer);
+   
+                    }
+                }
+                catch (FormatException f)
+                {
+                    MessageBox.Show("Don't u know u can only buy shares in numbers");
+                    textBox2.Text = "";
+                }
+            }
+        }
+
+        private void button4_Click(object sender, EventArgs e)
+        {
+            if (textBox3.Text != "")
+            {
+                try
+                {
+                    count = int.Parse(textBox3.Text);
+                    if (count * Principle.PW > Principle.total_money)
+                    {
+                        MessageBox.Show("Insufficient Balance.........");
+                    }
+                    else
+                    {
+                        Principle.total_money -= count * Principle.PW;
+                        Money.Text = Principle.total_money.ToString();
+                        Principle.W_share += count;
+                        W.Text = Principle.W_share.ToString();
+                        textBox3.Text = "";
+                     //   buffer = new byte[100];
+                       // buffer = Encoding.ASCII.GetBytes("WB" + count.ToString());
+                        //Principle.client.Send(buffer);
+   
+
+                    }
+                }
+                catch (FormatException f)
+                {
+                    textBox3.Text = "";
+                    MessageBox.Show("Don't u know u can only buy shares in numbers");
+                }
+            }
+        }
+
+        private void button6_Click(object sender, EventArgs e)
+        {
+            if (textBox4.Text != "")
+            {
+                try
+                {
+                    count = int.Parse(textBox4.Text);
+                    if (count * Principle.PT > Principle.total_money)
+                    {
+                        MessageBox.Show("Insufficient Balance.........");
+                    }
+                    else
+                    {
+                        Principle.total_money -= count * Principle.PT;
+                        Money.Text = Principle.total_money.ToString();
+                        Principle.T_share += count;
+                        T.Text = Principle.T_share.ToString();
+                        textBox4.Text = "";
+                      //  buffer = new byte[100];
+                        //buffer = Encoding.ASCII.GetBytes("TB" + count.ToString());
+                        //Principle.client.Send(buffer);
+   
+                    }
+                }
+                catch (FormatException f)
+                {
+                    textBox4.Text = "";
+                    MessageBox.Show("Don't u know u can only Buy shares in numbers");
+                }
+            }
+        }
+
+        private void button8_Click(object sender, EventArgs e)
+        {
+            if (textBox5.Text != "")
+            {
+                try
+                {
+                    count = int.Parse(textBox5.Text);
+                    if (count * Principle.PM > Principle.total_money)
+                    {
+                        MessageBox.Show("Insufficient Balance.........");
+
+                    }
+                    else
+                    {
+                        Principle.total_money -= count * Principle.PM;
+                        Money.Text = Principle.total_money.ToString();
+                        Principle.M_share += count;
+                        M.Text = Principle.M_share.ToString();
+                        textBox5.Text = "";
+                        //buffer = new byte[100];
+                        //buffer = Encoding.ASCII.GetBytes("MB" + count.ToString());
+                        //Principle.client.Send(buffer);
+   
+
+                    }
+                }
+                catch (FormatException f)
+                {
+                    textBox5.Text = "";
+                    MessageBox.Show("Don't u know u can only buy shares in numbers");
+                }
+            }
+        }
+
+        private void FS_Click(object sender, EventArgs e)
+        {
+            if (textBox1.Text != "")
+            {
+                try
+                {
+                    
+                    count = int.Parse(textBox1.Text);
+                    if (count > Principle.F_share)
+                    {
+                        MessageBox.Show("Not Enough Shares.............");
+                    }
+                    else
+                    {
+                      
+                        Principle.total_money += count * Principle.PF;
+                        Money.Text = Principle.total_money.ToString();
+                        Principle.F_share -= count;
+                        F.Text = Principle.F_share.ToString();
+                        textBox1.Text = "";
+                        //buffer = new byte[100];
+                        //buffer = Encoding.ASCII.GetBytes("FS"+count.ToString());
+                        //Principle.client.Send(buffer);
+   
+
+
+                    }
+                }
+                catch (FormatException f)
+                {
+                    textBox1.Text = "";
+                    MessageBox.Show("Don't u know u can only Sell shares in numbers");
+                }
+            }
+
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            if (textBox2.Text != "")
+            {
+                try
+                {
+                    count = int.Parse(textBox2.Text);
+                    if (count > Principle.G_share)
+                    {
+                        MessageBox.Show("Not Enough Shares.............");
+                    }
+                    else
+                    {
+                        Principle.total_money += count * Principle.PG;
+                        Money.Text = Principle.total_money.ToString();
+                        Principle.G_share -= count;
+                        G.Text = Principle.G_share.ToString();
+                        textBox2.Text = "";
+                        //buffer = new byte[100];
+                        //buffer = Encoding.ASCII.GetBytes("GS" + count.ToString());
+                       // Principle.client.Send(buffer);
+   
+                    }
+                }
+                catch (FormatException f)
+                {
+                    textBox2.Text = "";
+                    MessageBox.Show("Don't u know u can only Sell shares in numbers");
+                }
+            }
+        }
+
+        private void button3_Click(object sender, EventArgs e)
+        {
+            if (textBox3.Text != "")
+            {
+                try
+                {
+                    count = int.Parse(textBox3.Text);
+                    if (count > Principle.W_share)
+                    {
+                        MessageBox.Show("Not Enough Shares.............");
+                    }
+                    else
+                    {
+                        Principle.total_money += count * Principle.PW;
+                        Money.Text = Principle.total_money.ToString();
+                        Principle.W_share -= count;
+                        W.Text = Principle.W_share.ToString();
+                        textBox3.Text = "";
+                        //buffer = new byte[100];
+                        //buffer = Encoding.ASCII.GetBytes("WS" + count.ToString());
+                       // Principle.client.Send(buffer);
+   
+                    }
+                }
+                catch (FormatException f)
+                
+                {
+                    textBox3.Text = "";
+                    MessageBox.Show("Don't u know u can only Sell shares in numbers");
+                }
+            }
+        }
+
+        private void button5_Click(object sender, EventArgs e)
+        {
+            if (textBox4.Text != "")
+            {
+                try
+                {
+                    count = int.Parse(textBox4.Text);
+                    if (count > Principle.T_share)
+                    {
+                        MessageBox.Show("Not Enough Shares.............");
+                    }
+                    else
+                    {
+                        Principle.total_money += count * Principle.PT;
+                        Money.Text = Principle.total_money.ToString();
+                        Principle.T_share -= count;
+                        T.Text = Principle.T_share.ToString();
+                        textBox4.Text = "";
+                        //buffer = new byte[100];
+                        //buffer = Encoding.ASCII.GetBytes("TS" +count.ToString());
+                        //Principle.client.Send(buffer);
+   
+                    }
+                }
+                catch (FormatException f)
+                {
+                    textBox4.Text = "";
+                    MessageBox.Show("Don't u know u can only Sell shares in numbers");
+                }
+            }
+        }
+
+        private void button7_Click(object sender, EventArgs e)
+        {
+            if (textBox5.Text != "")
+            {
+                try
+                {
+                    count = int.Parse(textBox5.Text);
+                    if (count > Principle.M_share)
+                    {
+                        MessageBox.Show("Not Enough Shares.............");
+                    }
+                    else
+                    {
+                        Principle.total_money += count * Principle.PM;
+                        Money.Text = Principle.total_money.ToString();
+                        Principle.M_share -= count;
+                        M.Text = Principle.M_share.ToString();
+                        textBox5.Text = "";
+                        //buffer = new byte[100];
+                        //buffer = Encoding.ASCII.GetBytes("MS" + count.ToString());
+                        //Principle.client.Send(buffer);
+   
+
+                    }
+                }
+                catch (FormatException f)
+                {
+                    textBox5.Text = "";
+                    MessageBox.Show("Don't u know u can only Sell shares in numbers");
+                }
+
+            }
+        }
+
+        private void name_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void Money_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void label2_Click_1(object sender, EventArgs e)
+        {
+
+        }
+
+        private void label1_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void textBox5_TextChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void textBox4_TextChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void textBox3_TextChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void textBox2_TextChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void textBox1_TextChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void M_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void Microsoft_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void T_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void Twitter_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void W_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void Wepro_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void G_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void Google_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void Facebook_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void chart1_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void chart5_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void chart4_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void timer1_Tick(object sender, EventArgs e)
+        {
+            if (flag == 1)
+            {
+                flag = 0;
+                Principle.total_money += Principle.F_share * Principle.PF + Principle.G_share * Principle.PG + Principle.W_share * Principle.PW + Principle.T_share * Principle.PT + Principle.M_share * Principle.PM;
+                Principle.client.Send(Encoding.ASCII.GetBytes(Principle.name + ":" + Principle.total_money + "#"));
+                Principle.client.Shutdown(SocketShutdown.Both);
+                Principle.client.Close();
+                MessageBox.Show("Final Score:"+Principle.total_money);
+                Application.Exit();
+            }
+            //ActiveForm.Close();
+
+
+        }
+
+        private void timer2_Tick(object sender, EventArgs e)
+        {
+            Principle.total_money += Principle.F_share * Principle.PF + Principle.G_share * Principle.PG + Principle.W_share * Principle.PW + Principle.T_share * Principle.PT + Principle.M_share * Principle.PM;
+            Principle.client.Send(Encoding.ASCII.GetBytes(Principle.name + ":" + Principle.total_money + "#"));
+
+        }
+
+        private void Market_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            try
+            {
+                Principle.total_money += Principle.F_share * Principle.PF + Principle.G_share * Principle.PG + Principle.W_share * Principle.PW + Principle.T_share * Principle.PT + Principle.M_share * Principle.PM;
+                Principle.client.Send(Encoding.ASCII.GetBytes(Principle.name + ":" + Principle.total_money + "#"));
+            }
+            catch (Exception f)
+            {
+            }
+            kill = Process.GetProcessesByName("Stock_client");
+            for (int i = 0; i < kill.Length; i++)
+                kill[i].Kill();
+         
+
+        }
+    }
+}
