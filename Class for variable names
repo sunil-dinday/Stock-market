@@ -1,0 +1,25 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Net;
+using System.Net.Sockets;
+using System.IO;
+
+namespace Stock_client
+{
+    class Principle
+    {
+        public static string name;//name of the candidate
+     public  static int total_money;//total money a candidate have
+     public static int F_share, G_share, W_share, M_share, T_share;//total number of share of each company
+     public static Socket client;//client socket
+     public static IPEndPoint iep;
+     public static int PF, PG, PM, PW, PT;//price of share of each company
+
+
+
+
+    }
+}
