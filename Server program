@@ -1,0 +1,345 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using System.Net;
+using System.Net.Sockets;
+using System.Threading;
+using System.IO;
+using System.Diagnostics;
+
+namespace Stock_server
+{
+    delegate void list(string txt);
+    delegate void list1(string txt);
+
+
+    public partial class Form1 : Form
+    {
+
+        Socket client,server;
+        Process []kill;
+        Thread t1, sent, recieve,newthread,main;
+        string send;
+        public Socket client1;
+        int flag ; //used to stop recieving
+        public string f;
+        static int connected, disconneted;//to count the number of connected and disconnected users
+        static string scores;
+     static  int FB, GB, WB, TB, MB, FS, GS, WS, TS, MS;
+     static int PF, PG, PW, PT, PM;
+        int count;
+        public Form1()
+        {
+            count = 0;
+            FS = FB = GB = GS = MB = MS = WB = WS = TB = TS=0;
+            PF = 0;
+            PG = 0;
+            PT = 0;
+            PM = 0;
+            PW = 0;
+            flag = 1;
+            InitializeComponent();
+        }
+        private void Form1_Load(object sender, EventArgs e)
+        {
+
+            connected = 0;
+            disconneted = 0;
+            IPAddress ip = IPAddress.Parse("192.168.100.14");
+            IPEndPoint iep = new IPEndPoint(ip,8000);
+             server = new Socket(AddressFamily.InterNetwork,SocketType.Stream,ProtocolType.Tcp);
+            server.Bind(iep);
+            listBox1.Items.Add("Server is Listening......");
+            server.Listen(20);
+             t1 = new Thread(new ThreadStart(clientaccept));
+            t1.Start();
+          //  t1.Join();
+           
+        }
+
+        public void setIP(string txt)
+        {
+            listBox1.Items.Add(connected+":-"+ txt);
+        }
+        private void clientaccept()
+        {
+            while (true)
+            {
+
+                string s;
+                
+              client1=  server.Accept();
+                count++;
+                connected++;//count the number of user connected
+               
+                if (this.listBox1.InvokeRequired)//used because we are invoking list from a different thread ,other then in which it is defined
+                {
+                    list l = new list(setIP);
+                    this.Invoke(l, new object[] { "Client Connected:"+ client1.RemoteEndPoint });
+                }
+                else
+                {
+                    listBox1.Items.Add("New Client Connected........ ");
+                }
+                Form1 h = new Form1();
+                h.client = this.client1;
+                
+                Thread newthread = new Thread(new
+ThreadStart(h.HandleClient));
+                newthread.Start();
+                
+             
+               
+            }
+
+            
+        }
+        public void HandleClient()
+        {
+             sent = new Thread(new ThreadStart(periodicsend));
+            sent.Start();
+            
+            recieve = new Thread(new ThreadStart(recievedata));
+            recieve.Start();
+
+        }
+       private void recievedata()
+        {
+            string []fb=new string[1];
+            Form1 f = new Form1();
+            string recieved;
+            int rec;
+            while (true)
+            {
+                try
+                {
+                    byte[] buffer_rec = new byte[100];
+                    rec = client.Receive(buffer_rec);
+                    recieved = Encoding.ASCII.GetString(buffer_rec, 0, rec);
+                    scores += recieved;//recieve score from user if he time-up or he give up
+                  /* if (recieved.Contains("FB"))
+                    {
+                        recieved = recieved.TrimStart('F', 'B');
+                        FB += int.Parse(recieved);
+                       
+                    }
+                    else if (recieved.Contains("FS"))
+                    {
+                        recieved = recieved.TrimStart('F', 'S');
+                        FS += int.Parse(recieved.ToString());
+                         
+                    }
+                    else if (recieved.Contains("GB"))
+                    {
+                        recieved = recieved.TrimStart('G', 'B');
+                        GB += int.Parse(recieved.ToString());
+                    }
+                    else if (recieved.Contains("GS"))
+                    {
+                        recieved = recieved.TrimStart('G', 'S');
+                        GS += int.Parse(recieved.ToString());
+                    }
+                    else if (recieved.Contains("WB"))
+                    {
+                        recieved = recieved.TrimStart('W', 'B');
+                        WB += int.Parse(recieved.ToString());
+                    }
+                    else if (recieved.Contains("WS"))
+                    {
+                        recieved = recieved.TrimStart('W', 'S');
+                        WS += int.Parse(recieved.ToString());
+                    }
+                    else if (recieved.Contains("TB"))
+                    {
+                        recieved = recieved.TrimStart('T', 'B');
+                        TB += int.Parse(recieved.ToString());
+                    }
+
+                    else if (recieved.Contains("TS"))
+                    {
+                        recieved = recieved.TrimStart('T', 'S');
+                        TS += int.Parse(recieved.ToString());
+                    }
+                    else if (recieved.Contains("MB"))
+                    {
+                        recieved = recieved.TrimStart('M', 'B');
+                        MB += int.Parse(recieved.ToString());
+                    }
+                    else if (recieved.Contains("MS"))
+                    {
+                        recieved = recieved.TrimStart('M', 'S');
+                        MS += int.Parse(recieved.ToString());
+                    }
+
+
+
+
+
+                        if (this.listBox1.InvokeRequired)
+                    {
+                        list1 l1 = new list1(setIP1);
+                        this.BeginInvoke(l1, new object[] {"recieved"  });
+                    }
+                    else
+                    {
+                        listBox1.Items.Add("New Client Connected........ ");
+                    }*/
+                }
+                catch (Exception fg)
+                {
+                 //  MessageBox.Show(fg.Message);
+                }
+            }
+        }
+        public void setIP1(string txt)
+        {
+            listBox1.Items.Add(txt);
+        }
+        private void periodicsend()
+        {
+            int []max=new int[5];
+            int[] max1 = new int[5];
+            Random r = new Random();
+            Random r1 = new Random();
+            int flag = 1;//used to set maximum of sell buy share to 1
+            int maximum;
+            int maximum1;
+            float mean,mf,mg,mw,mt,mm;//mean  and mean deiviation of each company buy
+            try
+            {
+                while (true)
+                {
+
+                   /* max[0] = FB;
+                    max[1] = GB;
+                    max[2] = WB;
+                    max[3] = TB;
+                    max[4] = MB;
+                    max1[0] = FS;
+                    max1[1] = GS;
+                    max1[2] = WS;
+                    max1[3] = TS;
+                    max1[4] = MS;
+                    maximum = max.Max();
+                    maximum1 = max1.Max();
+                    if (maximum == 0 )
+                        maximum =1;
+                    if (maximum1 == 0)
+                        maximum1 = 1;
+                   // MessageBox.Show(maximum.ToString());
+                    mean=(FB+GB+WB+TB+MB)/(5);
+                    mf = Math.Abs(FB - mean);
+                    mg = Math.Abs(GB - mean);
+                    mw = Math.Abs(WB - mean);
+                    mt = Math.Abs(TB - mean);
+                    mm = Math.Abs(MB - mean);
+                    PF+=(int) (((mf /maximum)*PF) -     (PF-PF *  Math.Pow(2.718281,(-FS) / maximum1)));
+                    PG += (int)(( (mg /maximum)*PG)-    (PG-PG * Math.Pow(2.718281, (-GS) / maximum1)));
+                    PW += (int)(( (mw /maximum)*PW)-    (PW-PW * Math.Pow(2.718281, (-WS) / maximum1)));
+                    PT += (int)(( (mt /maximum)*PT) -   (PT- PT* Math.Pow(2.718281, (-TS) / maximum1)));
+                    PM += (int)(((mm /maximum)*PM) -    (PM-PM * Math.Pow(2.718281, (-MS) / maximum1)));
+                   */
+             
+                    PF = (r.Next()%300);
+                    PG = (r.Next() % 300) ;
+                    PW = (r.Next() % 300) ;
+                    PT = (r.Next() % 300) ;
+                    PM = (r.Next() % 300) ;
+                    if (PF <= 77)
+                        PF = 77-PG%41;
+                    if (PG <= 66)
+                        PG = 71-PW%37;
+                    if (PW <= 34)
+                        PW = 45-PT%17;
+                    if (PT <=59 )
+                        PT = 64-PM%31;
+                    if (PM <= 55)
+                        PM = 50-PF%23; 
+                    send = PF.ToString() + "#" + PG.ToString() + "#" + PW.ToString() + "#" + PT.ToString() + "#" + PM.ToString();
+                    client.Send(Encoding.ASCII.GetBytes(send));
+                    Thread.Sleep(5000);
+                }
+            }
+            catch (Exception f)
+            {
+               
+                //MessageBox.Show("User Disconnected:"+client.RemoteEndPoint.ToString());
+                disconneted++;
+                //this.client.Shutdown(SocketShutdown.Both);
+                //this.client.Close();
+            }
+
+
+        }
+
+        private void timer1_Tick(object sender, EventArgs e)
+        {
+
+            if (connected==disconneted&&connected!=0&&flag==1)
+            {
+               flag = 0;
+                string[] get = new string[12];
+             
+             //   listBox1.Items.Add(scores);
+                get = scores.Split('#');
+                for (int i = 0; i <get.Length; i++)
+                {
+                    listBox1.Items.Add(get[i]);
+             
+
+                }
+
+              /*
+                    listBox1.Items.Add(get[0]);
+            
+                    listBox1.Items.Add(get[1]);
+            
+                    listBox1.Items.Add(get[2]);
+              
+                   listBox1.Items.Add(get[3]);
+               
+                    listBox1.Items.Add(get[4]);
+
+                    listBox1.Items.Add(get[5]);
+
+                    listBox1.Items.Add(get[6]);
+                    listBox1.Items.Add(get[7]);
+
+                  listBox1.Items.Add(get[8]);
+                    listBox1.Items.Add(get[9]);
+                    listBox1.Items.Add(get[10]);
+                  //  listBox1.Items.Add(get[11]);
+               * 
+
+                   // listBox1.Items.Add(get[4]);*/
+            }
+        }
+
+        private void Form1_FormClosing(object sender, FormClosingEventArgs e)
+        {
+
+           kill= Process.GetProcessesByName("Stock_server");//to kill all the threads associated with the application
+           for (int i = 0; i < kill.Length; i++)
+               kill[i].Kill();
+        }
+
+        private void Form1_FormClosed(object sender, FormClosedEventArgs e)
+        {
+
+            
+
+        }
+
+    
+    }
+    
+      
+   
+
+}
