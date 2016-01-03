@@ -1,0 +1,66 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using System.Net;
+using System.Net.Sockets;
+using System.IO;
+
+namespace Stock_client
+{
+    public partial class Register : Form
+    {
+      
+        public Register()
+        {
+            InitializeComponent();
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            
+            Principle.F_share = Principle.G_share = Principle.M_share = Principle.T_share = Principle.W_share = -0;
+            Principle.total_money = 3000;
+            Principle.name = textBox1.Text;
+           /* Principle.PF = 100;
+            Principle.PG = 120;
+            Principle.PM = 400;
+            Principle.PT = 300;
+            Principle.PW = 170;
+        */
+           
+
+            if (textBox1.Text != " ")
+            {
+                try
+                {
+                    Principle.name = textBox1.Text;
+                    IPAddress ip = IPAddress.Parse("192.168.100.14");
+                    Principle.client = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                    Principle.iep = new IPEndPoint(ip, 8000);
+             Principle.client.Connect(Principle.iep);
+
+                    Market m = new Market();
+                    ActiveForm.Hide();
+                    m.Show();
+                }
+                catch (SocketException s)
+                {
+                    MessageBox.Show("Error Connecting.....................");
+                }
+
+            }
+        }
+            
+
+        private void Register_Load(object sender, EventArgs e)
+        {
+            this.ActiveControl = textBox1;
+        }
+    }
+}
