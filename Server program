@@ -15,7 +15,7 @@ using System.Diagnostics;
 
 namespace Stock_server
 {
-    delegate void list(string txt);
+    delegate void list(string txt);//del
     delegate void list1(string txt);
 
 
